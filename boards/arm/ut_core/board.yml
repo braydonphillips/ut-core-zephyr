@@ -1,0 +1,6 @@
+board:
+  name: ut_core
+  full_name: UT-CORE STM32U5
+  vendor: utah_tech
+  socs:
+    - name: stm32u5a5xx

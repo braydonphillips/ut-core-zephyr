@@ -1,0 +1,65 @@
+/*
+ * UT-CORE (STM32U5A5xx)
+ * Crystal-less bring-up, no USART, LED visibility on PC13/14/15
+ */
+
+/dts-v1/;
+
+#include <st/u5/stm32u5a5Xj.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl.h>
+
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			label = "LED0_PC13";
+		};
+
+		led1: led_1 {
+			gpios = <&gpioc 14 GPIO_ACTIVE_HIGH>;
+			label = "LED1_PC14";
+		};
+
+		led2: led_2 {
+			gpios = <&gpioc 15 GPIO_ACTIVE_HIGH>;
+			label = "LED2_PC15";
+		};
+	};
+};
+
+/* Internal 48 MHz oscillator (safe; useful later for USB) */
+&clk_hsi48 {
+	status = "disabled";
+};
+
+/* No external crystals */
+&clk_hse { status = "disabled"; };
+&clk_lse { status = "disabled"; };
+
+&clk_msis {
+  status = "okay";
+};
+
+&rcc {
+  clocks = <&clk_msis>;
+  /* Pick a conservative frequency that matches common reset MSIS value */
+  clock-frequency = <DT_FREQ_M(4)>;
+  ahb-prescaler = <1>;
+  apb1-prescaler = <1>;
+  apb2-prescaler = <1>;
+  apb3-prescaler = <1>;
+};
+
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+    status = "okay";
+};
+

@@ -1,0 +1,115 @@
+/*
+ * UT-CORE STM32U5A5xx board
+ * Crystal-less, no USART console, no MCUboot
+ */
+
+/dts-v1/;
+
+#include "ut_core-common.dtsi"
+#include <zephyr/dt-bindings/spi/spi.h>
+
+
+/ {
+	model = "UT-CORE STM32U5A5";
+	compatible = "utahtech,ut-core-stm32u5a5";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		/* No UART console on this board */
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		fram0 = &fram0;
+	};
+};
+
+
+&gpiob {
+    fram_wp_hog {
+        gpio-hog;
+        gpios = <5 GPIO_ACTIVE_LOW>;   /* PB5 */
+        output-high;                   /* logical HIGH => inactive (because ACTIVE_LOW) */
+        line-name = "FRAM_WP";
+    };
+};
+
+&pinctrl {
+	status = "okay";
+
+	i2c1_scl_pb6: i2c1_scl_pb6 {
+		pinmux = <STM32_PINMUX('B', 6, AF4)>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+	i2c1_sda_pb7: i2c1_sda_pb7 {
+		pinmux = <STM32_PINMUX('B', 7, AF4)>;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+
+	spi2_sck_pb13: spi2_sck_pb13 {
+        pinmux = <STM32_PINMUX('B', 13, AF5)>;
+    };
+
+    spi2_miso_pb14: spi2_miso_pb14 {
+        pinmux = <STM32_PINMUX('B', 14, AF5)>;
+    };
+
+    spi2_mosi_pb15: spi2_mosi_pb15 {
+        pinmux = <STM32_PINMUX('B', 15, AF5)>;
+    };
+
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>; /* 100 kHz */
+	status = "okay";
+};
+
+&spi2 {
+    status = "okay";
+    pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
+    pinctrl-names = "default";
+    cs-gpios = <&gpiob 4 GPIO_ACTIVE_LOW>; /* CS1 = PB4 */
+
+    fram0: fram@0 {
+        compatible = "zephyr,spidev";
+        reg = <0>;
+		status = "okay";
+
+        spi-max-frequency = <250000>;
+
+        duplex = <SPI_FULL_DUPLEX>;
+        frame-format = <SPI_FRAME_FORMAT_MOTOROLA>;
+    };
+};
+
+
+
+&swj_port {
+	status = "disabled";
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-1;
+	/delete-property/ pinctrl-2;
+	/delete-property/ pinctrl-names;
+};
+
+/* Not using USB during bring-up */
+&usbotg_hs {
+	status = "disabled";
+};
+
+&otghs_phy {
+	status = "disabled";
+};

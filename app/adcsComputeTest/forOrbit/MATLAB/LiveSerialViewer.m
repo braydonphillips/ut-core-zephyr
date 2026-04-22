@@ -1,12 +1,13 @@
 %% LiveSerialViewer — Real-time ADCS telemetry from serial port
 %
 %  Reads the UART output from the adcsComputeTest Zephyr app, parses
-%  attitude quaternion, body rates, magnetorquer dipole, and raw sensor
+%  attitude quaternion, body rates, observed magnetic field, and magnetorquer
 %  data, then displays:
 %    1) A 3D cubesat model that rotates with the estimated quaternion
 %    2) Live scrolling plots of quaternion components
 %    3) Live scrolling plots of body rates (deg/s)
-%    4) Live scrolling plots of magnetorquer dipole commands
+%    4) Live scrolling plots of observed magnetic field (uT)
+%    5) Live scrolling plots of magnetorquer dipole commands
 %
 %  Usage:
 %    LiveSerialViewer("COM5")         % Windows
@@ -35,7 +36,7 @@ function LiveSerialViewer(port, history_len)
     q_buf   = NaN(4, history_len);   % q0 q1 q2 q3
     w_buf   = NaN(3, history_len);   % wx wy wz  (will store in deg/s)
     mtq_buf = NaN(3, history_len);   % mtq x y z
-    mag_buf = NaN(3, history_len);   % averaged raw mag (for display)
+    b_buf   = NaN(3, history_len);   % observed magnetic field [T]
 
     idx = 0;
     t0  = NaN;
@@ -45,8 +46,7 @@ function LiveSerialViewer(port, history_len)
     cur_w     = [0 0 0];
     cur_mtq   = [0 0 0];
     cur_valid = 1;
-    cur_mag   = [0 0 0];
-    mag_count = 0;
+    cur_b     = [0 0 0];
     cycle_complete = false;
 
     % =====================================================================
@@ -113,10 +113,10 @@ function LiveSerialViewer(port, history_len)
 
     % --- Figure 2: time-series plots ---
     fig2d = figure('Name','ADCS Telemetry','NumberTitle','off', ...
-                   'Color','w','Position',[670 100 750 700]);
+                   'Color','w','Position',[670 80 820 860]);
 
     % Quaternion subplot
-    ax_q = subplot(3,1,1,'Parent',fig2d); hold(ax_q,'on'); grid(ax_q,'on');
+    ax_q = subplot(4,1,1,'Parent',fig2d); hold(ax_q,'on'); grid(ax_q,'on');
     title(ax_q,'Attitude Quaternion'); ylabel(ax_q,'q');
     hq = gobjects(4,1);
     qnames = {'q_0','q_1','q_2','q_3'};
@@ -128,7 +128,7 @@ function LiveSerialViewer(port, history_len)
     legend(ax_q, 'Location','eastoutside','FontSize',9);
 
     % Rate subplot
-    ax_w = subplot(3,1,2,'Parent',fig2d); hold(ax_w,'on'); grid(ax_w,'on');
+    ax_w = subplot(4,1,2,'Parent',fig2d); hold(ax_w,'on'); grid(ax_w,'on');
     title(ax_w,'Body Rates'); ylabel(ax_w,'\omega (deg/s)');
     hw = gobjects(3,1);
     wnames = {'\omega_x','\omega_y','\omega_z'};
@@ -139,8 +139,19 @@ function LiveSerialViewer(port, history_len)
     end
     legend(ax_w, 'Location','eastoutside','FontSize',9);
 
+    % Observed magnetic field subplot
+    ax_b = subplot(4,1,3,'Parent',fig2d); hold(ax_b,'on'); grid(ax_b,'on');
+    title(ax_b,'Observed Magnetic Field'); ylabel(ax_b,'B (\muT)');
+    hb = gobjects(3,1);
+    bnames = {'B_x','B_y','B_z'};
+    for i = 1:3
+        hb(i) = plot(ax_b, t_buf, b_buf(i,:)*1e6, wcolors{i}, ...
+                     'LineWidth', 1.5, 'DisplayName', bnames{i});
+    end
+    legend(ax_b, 'Location','eastoutside','FontSize',9);
+
     % MTQ subplot
-    ax_m = subplot(3,1,3,'Parent',fig2d); hold(ax_m,'on'); grid(ax_m,'on');
+    ax_m = subplot(4,1,4,'Parent',fig2d); hold(ax_m,'on'); grid(ax_m,'on');
     title(ax_m,'Magnetorquer Dipole'); ylabel(ax_m,'m (A\cdotm^2)');
     xlabel(ax_m,'Time (s)');
     hm = gobjects(3,1);
@@ -165,41 +176,38 @@ function LiveSerialViewer(port, history_len)
         line = char(line);
 
         % --- Parse "[ADCS] q: ..." ---
-        toks = regexp(line, '\[ADCS\]\s+q:\s+([\-\d\.]+)\s+([\-\d\.]+)\s+([\-\d\.]+)\s+([\-\d\.]+)', 'tokens');
+        toks = regexp(line, '\[ADCS\]\s+q:\s+([\-+\d\.eE]+)\s+([\-+\d\.eE]+)\s+([\-+\d\.eE]+)\s+([\-+\d\.eE]+)', 'tokens');
         if ~isempty(toks)
             cur_q = str2double(toks{1});
             continue;
         end
 
         % --- Parse "[ADCS] w: ..." ---
-        toks = regexp(line, '\[ADCS\]\s+w:\s+([\-\d\.]+)\s+([\-\d\.]+)\s+([\-\d\.]+)', 'tokens');
+        toks = regexp(line, '\[ADCS\]\s+w:\s+([\-+\d\.eE]+)\s+([\-+\d\.eE]+)\s+([\-+\d\.eE]+)', 'tokens');
         if ~isempty(toks)
             cur_w = str2double(toks{1});
             continue;
         end
 
-        % --- Parse "[ADCS] mtq: ..." ---
-        toks = regexp(line, '\[ADCS\]\s+mtq:\s+([\-\d\.]+)\s+([\-\d\.]+)\s+([\-\d\.]+)\s+valid:(\d)', 'tokens');
+        % --- Parse "[ADCS] B [T]: ..." ---
+        toks = regexp(line, '\[ADCS\]\s+B\s+\[T\]:\s+([\-+\d\.eE]+)\s+([\-+\d\.eE]+)\s+([\-+\d\.eE]+)', 'tokens');
         if ~isempty(toks)
-            cur_mtq   = str2double(toks{1}(1:3));
-            cur_valid = str2double(toks{1}(4));
-            cycle_complete = true;
-        end
-
-        % --- Parse "MAGn  M:..." for raw mag display ---
-        toks = regexp(line, 'MAG\d\s+M:\s*([\-\d]+)\s+([\-\d]+)\s+([\-\d]+)', 'tokens');
-        if ~isempty(toks)
-            vals = str2double(toks{1});
-            cur_mag = cur_mag + vals;
-            mag_count = mag_count + 1;
+            cur_b = str2double(toks{1});
             continue;
         end
 
-        % --- Parse "--- cycle N ---" to reset per-cycle scratch ---
-        toks = regexp(line, '---\s+cycle\s+(\d+)\s+---', 'tokens');
+        % --- Parse "[ADCS] mode=... valid:N" ---
+        toks = regexp(line, '\[ADCS\]\s+mode=.*\s+valid:(\d)', 'tokens');
         if ~isempty(toks)
-            mag_count = 0;
-            cur_mag = [0 0 0];
+            cur_valid = str2double(toks{1}{1});
+            continue;
+        end
+
+        % --- Parse "[ADCS] mtq [A*m^2]: ..." ---
+        toks = regexp(line, '\[ADCS\]\s+mtq\s+\[A\*m\^2\]:\s+([\-+\d\.eE]+)\s+([\-+\d\.eE]+)\s+([\-+\d\.eE]+)', 'tokens');
+        if ~isempty(toks)
+            cur_mtq   = str2double(toks{1});
+            cycle_complete = true;
             continue;
         end
 
@@ -217,17 +225,18 @@ function LiveSerialViewer(port, history_len)
             t_buf   = [t_buf(2:end),   t_now];
             q_buf   = [q_buf(:,2:end), cur_q(:)];
             w_buf   = [w_buf(:,2:end), rad2deg(cur_w(:))];
+            b_buf   = [b_buf(:,2:end), cur_b(:)];
             mtq_buf = [mtq_buf(:,2:end), cur_mtq(:)];
-            if mag_count > 0
-                mag_buf = [mag_buf(:,2:end), (cur_mag / mag_count)'];
-            else
-                mag_buf = [mag_buf(:,2:end), NaN(3,1)];
-            end
 
             % =============================================================
             %  Update 3D cubesat
             % =============================================================
-            q = cur_q / norm(cur_q);
+            qn = norm(cur_q);
+            if qn > 0
+                q = cur_q / qn;
+            else
+                q = [1 0 0 0];
+            end
             R = quat2rotm_local(q);
             M = eye(4); M(1:3,1:3) = R;
             set(hT, 'Matrix', M);
@@ -248,6 +257,7 @@ function LiveSerialViewer(port, history_len)
             end
             for i = 1:3
                 set(hw(i), 'XData', t_buf, 'YData', w_buf(i,:));
+                set(hb(i), 'XData', t_buf, 'YData', b_buf(i,:)*1e6);
                 set(hm(i), 'XData', t_buf, 'YData', mtq_buf(i,:));
             end
 
@@ -259,6 +269,7 @@ function LiveSerialViewer(port, history_len)
                 if tmax > tmin
                     xlim(ax_q, [tmin tmax]);
                     xlim(ax_w, [tmin tmax]);
+                    xlim(ax_b, [tmin tmax]);
                     xlim(ax_m, [tmin tmax]);
                 end
             end

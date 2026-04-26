@@ -66,7 +66,7 @@ switch numCols
         model_log        = data(:, 54:60)';    % 7 model states
         tau_grav_log     = data(:, 61:63)';    % 3 gravity torque
         tau_dist_log     = data(:, 64:66)';    % 3 disturbance torque
-        mtq_current_log  = data(:, 67:70)';    % 4 per-face MTQ currents [A]
+        mtq_current_log  = data(:, 67:70)';    % 4 per-face MTQ face signals
         mtq_b_ref_log    = data(:, 71:74)';    % 4 per-face B-field references [T]
         mode_log         = data(:, 75)';       % 1 mode
         innov_log        = [];                 % No innovations in this format
@@ -85,7 +85,7 @@ switch numCols
         model_log        = data(:, 54:60)';    % 7 model states
         tau_grav_log     = data(:, 61:63)';    % 3 gravity torque
         tau_dist_log     = data(:, 64:66)';    % 3 disturbance torque
-        mtq_current_log  = data(:, 67:70)';    % 4 per-face MTQ currents [A]
+        mtq_current_log  = data(:, 67:70)';    % 4 per-face MTQ face signals
         mtq_b_ref_log    = data(:, 71:74)';    % 4 per-face B-field references [T]
         accel_innov_log  = data(:, 75:77)';    % 3 accel innovation components
         accel_innov_norm = data(:, 78);        % 1 accel innovation norm
@@ -108,7 +108,7 @@ switch numCols
         model_log        = data(:, 51:57)';    % 7 model states
         tau_grav_log     = data(:, 58:60)';    % 3 gravity torque
         tau_dist_log     = data(:, 61:63)';    % 3 disturbance torque
-        mtq_current_log  = data(:, 64:67)';    % 4 per-face MTQ currents [A]
+        mtq_current_log  = data(:, 64:67)';    % 4 per-face MTQ face enables [0/1]
         mtq_b_ref_log    = data(:, 68:71)';    % 4 per-face B-field references [T]
         accel_innov_log  = data(:, 72:74)';    % 3 accel innovation components
         accel_innov_norm = data(:, 75);        % 1 accel innovation norm
@@ -220,11 +220,12 @@ end
 if exist('mtq_current_log', 'var') && ~isempty(mtq_current_log) && any(mtq_current_log(:) ~= 0)
     figure('Name', 'MTQ Health & EKF Estimation Analysis');
     
-    % Per-face MTQ currents
+    % Per-face MTQ enable flags
     subplot(3,2,1);
     plot(time_log, mtq_current_log');
-    xlabel('Time [s]'); ylabel('Current [A]');
-    title('Per-Face MTQ Currents');
+    ylim([-0.1, 1.1]);
+    xlabel('Time [s]'); ylabel('Enable [0/1]');
+    title('Per-Face MTQ Enables');
     legend('Xpos', 'Xneg', 'Ypos', 'Yneg'); grid on;
     
     % Per-face B-field references

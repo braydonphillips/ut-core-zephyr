@@ -137,13 +137,17 @@ classdef Plotter < handle
                 figure('Windowstyle','docked','name','Inputs (MTQ)');
                 clf; sgtitle('Inputs')
                 subplot(4,1,1); hold on; grid on;
-                self.handles(33) = plot(self.time_history, self.mtq_current_history(1,:), '-k','LineWidth',Param.line_width); ylabel('$I_{X+}$ (A)','Interpreter','latex')
+                self.handles(33) = plot(self.time_history, self.mtq_current_history(1,:), '-k','LineWidth',Param.line_width); ylabel('X+ [0/1]')
+                ylim([-0.1, 1.1]);
                 subplot(4,1,2); hold on; grid on;
-                self.handles(34) = plot(self.time_history, self.mtq_current_history(2,:), '-k','LineWidth',Param.line_width); ylabel('$I_{X-}$ (A)','Interpreter','latex')
+                self.handles(34) = plot(self.time_history, self.mtq_current_history(2,:), '-k','LineWidth',Param.line_width); ylabel('X- [0/1]')
+                ylim([-0.1, 1.1]);
                 subplot(4,1,3); hold on; grid on;
-                self.handles(35) = plot(self.time_history, self.mtq_current_history(3,:), '-k','LineWidth',Param.line_width); ylabel('$I_{Y+}$ (A)','Interpreter','latex')
+                self.handles(35) = plot(self.time_history, self.mtq_current_history(3,:), '-k','LineWidth',Param.line_width); ylabel('Y+ [0/1]')
+                ylim([-0.1, 1.1]);
                 subplot(4,1,4); hold on; grid on;
-                self.handles(36) = plot(self.time_history, self.mtq_current_history(4,:), '-k','LineWidth',Param.line_width); ylabel('$I_{Y-}$ (A)','Interpreter','latex'); xlabel("t - time (s)")
+                self.handles(36) = plot(self.time_history, self.mtq_current_history(4,:), '-k','LineWidth',Param.line_width); ylabel('Y- [0/1]'); xlabel("t - time (s)")
+                ylim([-0.1, 1.1]);
             end
 
             %% Reaction wheel RPMs

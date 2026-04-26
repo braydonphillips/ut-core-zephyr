@@ -44,7 +44,7 @@ switch numCols
         states_log   = data(:, 2:12)';     % 11 states
         est_log      = data(:, 13:23)';    % 11 estimates
         ref_log      = data(:, 24:33)';    % 10 reference
-        input_log    = data(:, 34:40)';    % 7 inputs
+        input_log    = data(:, 34:40)';    % 7 legacy inputs
         meas_log     = data(:, 41:53)';    % 13 measurements
         model_log    = data(:, 54:60)';    % 7 model states
         tau_grav_log = data(:, 61:63)';    % 3 gravity torque
@@ -61,7 +61,7 @@ switch numCols
         states_log       = data(:, 2:12)';     % 11 states
         est_log          = data(:, 13:23)';    % 11 estimates
         ref_log          = data(:, 24:33)';    % 10 reference
-        input_log        = data(:, 34:40)';    % 7 inputs
+        input_log        = data(:, 34:40)';    % 7 legacy inputs
         meas_log         = data(:, 41:53)';    % 13 measurements
         model_log        = data(:, 54:60)';    % 7 model states
         tau_grav_log     = data(:, 61:63)';    % 3 gravity torque
@@ -80,7 +80,7 @@ switch numCols
         states_log       = data(:, 2:12)';     % 11 states
         est_log          = data(:, 13:23)';    % 11 estimates
         ref_log          = data(:, 24:33)';    % 10 reference
-        input_log        = data(:, 34:40)';    % 7 inputs
+        input_log        = data(:, 34:37)';    % 4 wheel torque inputs
         meas_log         = data(:, 41:53)';    % 13 measurements
         model_log        = data(:, 54:60)';    % 7 model states
         tau_grav_log     = data(:, 61:63)';    % 3 gravity torque
@@ -93,9 +93,32 @@ switch numCols
         mag_innov_norm   = data(:, 82);        % 1 mag innovation norm
         mode_log         = data(:, 83)';       % 1 mode
         innov_log        = [accel_innov_log; accel_innov_norm'; mag_innov_log; mag_innov_norm'];
+
+    case 80
+        % Updated format: MTQ dipole removed from input columns, coil currents retained
+        data_format = 'airbearing';
+        fprintf('Detected Air Bearing format with wheel-torque + MTQ-coil-current logging.\n');
+
+        time_log         = data(:, 1);
+        states_log       = data(:, 2:12)';     % 11 states
+        est_log          = data(:, 13:23)';    % 11 estimates
+        ref_log          = data(:, 24:33)';    % 10 reference
+        input_log        = data(:, 34:37)';    % 4 wheel torque inputs
+        meas_log         = data(:, 38:50)';    % 13 measurements
+        model_log        = data(:, 51:57)';    % 7 model states
+        tau_grav_log     = data(:, 58:60)';    % 3 gravity torque
+        tau_dist_log     = data(:, 61:63)';    % 3 disturbance torque
+        mtq_current_log  = data(:, 64:67)';    % 4 per-face MTQ currents [A]
+        mtq_b_ref_log    = data(:, 68:71)';    % 4 per-face B-field references [T]
+        accel_innov_log  = data(:, 72:74)';    % 3 accel innovation components
+        accel_innov_norm = data(:, 75);        % 1 accel innovation norm
+        mag_innov_log    = data(:, 76:78)';    % 3 mag innovation components
+        mag_innov_norm   = data(:, 79);        % 1 mag innovation norm
+        mode_log         = data(:, 80)';       % 1 mode
+        innov_log        = [accel_innov_log; accel_innov_norm'; mag_innov_log; mag_innov_norm'];
         
     otherwise
-        error('Unknown simulation_data.csv column count: %d. Expected 67, 75, or 83.', numCols);
+        error('Unknown simulation_data.csv column count: %d. Expected 67, 75, 80, or 83.', numCols);
 end
 
 switch data_format
@@ -132,9 +155,10 @@ for k = 1:length(time_log)
     states_k = states_log(:, k);
     est_k    = est_log(:, k);
     ref_k    = ref_log(:, k);
-    input_k  = input_log(:, k);
+    input_k  = input_log(1:4, k);
     meas_k   = meas_log(:, k);
     model_k  = model_log(:, k);
+    mtq_current_k = mtq_current_log(:, k);
 
     if strcmp(data_format, 'airbearing')
         tau_grav_k = tau_grav_log(:, k);
@@ -149,7 +173,7 @@ for k = 1:length(time_log)
     end
 
     animation.update(states_k, ref_k, mode_str);
-    plotter.update(t, states_k, est_k, ref_k, model_k, input_k, meas_k, mode_str);
+    plotter.update(t, states_k, est_k, ref_k, model_k, input_k, meas_k, mode_str, mtq_current_k);
     %drawnow;
 end
 
@@ -338,13 +362,13 @@ if strcmp(data_format, 'airbearing')
         h_perp_norm = vecnorm(h_perp, 2, 1);
 
         % MTQ command and expected torque authority
-        m_cmd = input_log(5:7, :);                         % [A*m^2]
-        m_cmd_norm = vecnorm(m_cmd, 2, 1);
-        tau_mtq = cross(m_cmd.', B_body.').';              % [N*m]
-        tau_mtq_norm = vecnorm(tau_mtq, 2, 1);
-        tau_mtq_max = m_max .* B_norm;                     % Max |m x B| with |m| <= m_max
-        tau_util = tau_mtq_norm ./ max(tau_mtq_max, 1e-12);
-        tau_util = min(max(tau_util, 0), 1);
+        %m_cmd = input_log(5:7, :);                         % [A*m^2]
+        %m_cmd_norm = vecnorm(m_cmd, 2, 1);
+        %tau_mtq = cross(m_cmd.', B_body.').';              % [N*m]
+        %tau_mtq_norm = vecnorm(tau_mtq, 2, 1);
+        %tau_mtq_max = m_max .* B_norm;                     % Max |m x B| with |m| <= m_max
+        %tau_util = tau_mtq_norm ./ max(tau_mtq_max, 1e-12);
+        %tau_util = min(max(tau_util, 0), 1);
 
         % Optional smoothing for slope visibility (roughly 1 second window)
         dt_med = median(diff(time_log));
@@ -357,8 +381,8 @@ if strcmp(data_format, 'airbearing')
 
         both_mask = (mode_log == 3);
         both_idx = find(both_mask);
-        mtq_active_mask = m_cmd_norm >= 0.1 * m_max;
-        active_mask = both_mask & mtq_active_mask;
+        %mtq_active_mask = m_cmd_norm >= 0.1 * m_max;
+        %active_mask = both_mask & mtq_active_mask;
 
         figure('Name', 'MTQ Desaturation Effectiveness');
 
@@ -440,15 +464,15 @@ if strcmp(data_format, 'airbearing')
             red_perp = 100 * (hperp0 - hperpf) / max(hperp0, 1e-12);
             red_par = 100 * (hpar0 - hparf) / max(hpar0, 1e-12);
 
-            if any(active_mask)
-                mean_slope_active = mean(dh_perp_dt(active_mask));
-                frac_decreasing_active = 100 * mean(dh_perp_dt(active_mask) < 0);
-                mean_tau_util_active = 100 * mean(tau_util(active_mask));
-            else
-                mean_slope_active = NaN;
-                frac_decreasing_active = NaN;
-                mean_tau_util_active = NaN;
-            end
+            %if any(active_mask)
+            %    mean_slope_active = mean(dh_perp_dt(active_mask));
+            %    frac_decreasing_active = 100 * mean(dh_perp_dt(active_mask) < 0);
+            %    mean_tau_util_active = 100 * mean(tau_util(active_mask));
+            %else
+            %    mean_slope_active = NaN;
+            %    frac_decreasing_active = NaN;
+            %    mean_tau_util_active = NaN;
+            %end
 
             fprintf('\n=== MTQ Desaturation Effectiveness (BOTH) ===\n');
             fprintf('BOTH window: %.2f s to %.2f s (%.2f s)\n', t_b_start, t_b_end, t_b_end - t_b_start);

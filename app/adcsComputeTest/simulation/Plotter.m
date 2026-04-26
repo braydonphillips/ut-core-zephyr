@@ -7,6 +7,7 @@ classdef Plotter < handle
         refer_history
         model_history
         input_history
+        mtq_current_history
         measurements_history
 
         % Flags
@@ -46,7 +47,8 @@ classdef Plotter < handle
             self.estim_history        = NaN(11, N);
             self.refer_history        = NaN(10, N);
             self.model_history        = NaN(7, N);
-            self.input_history        = NaN(7,  N);
+            self.input_history        = NaN(4,  N);
+            self.mtq_current_history  = NaN(4,  N);
             self.measurements_history = NaN(13, N);
             self.index = 1;
 
@@ -134,12 +136,14 @@ classdef Plotter < handle
 
                 figure('Windowstyle','docked','name','Inputs (MTQ)');
                 clf; sgtitle('Inputs')
-                subplot(3,1,1); hold on; grid on;
-                self.handles(33) = plot(self.time_history, self.input_history(5,:), '-k','LineWidth',Param.line_width); ylabel('$\tau_1$ (Nm)','Interpreter','latex')
-                subplot(3,1,2); hold on; grid on;
-                self.handles(34) = plot(self.time_history, self.input_history(6,:), '-k','LineWidth',Param.line_width); ylabel('$\tau_2$ (Nm)','Interpreter','latex')
-                subplot(3,1,3); hold on; grid on;
-                self.handles(35) = plot(self.time_history, self.input_history(7,:), '-k','LineWidth',Param.line_width); ylabel('$\tau_3$ (Nm)','Interpreter','latex'); xlabel("t - time (s)")
+                subplot(4,1,1); hold on; grid on;
+                self.handles(33) = plot(self.time_history, self.mtq_current_history(1,:), '-k','LineWidth',Param.line_width); ylabel('$I_{X+}$ (A)','Interpreter','latex')
+                subplot(4,1,2); hold on; grid on;
+                self.handles(34) = plot(self.time_history, self.mtq_current_history(2,:), '-k','LineWidth',Param.line_width); ylabel('$I_{X-}$ (A)','Interpreter','latex')
+                subplot(4,1,3); hold on; grid on;
+                self.handles(35) = plot(self.time_history, self.mtq_current_history(3,:), '-k','LineWidth',Param.line_width); ylabel('$I_{Y+}$ (A)','Interpreter','latex')
+                subplot(4,1,4); hold on; grid on;
+                self.handles(36) = plot(self.time_history, self.mtq_current_history(4,:), '-k','LineWidth',Param.line_width); ylabel('$I_{Y-}$ (A)','Interpreter','latex'); xlabel("t - time (s)")
             end
 
             %% Reaction wheel RPMs
@@ -149,7 +153,7 @@ classdef Plotter < handle
                 sgtitle('Reaction Wheel Speeds');
                 colors = {'r','g','b','k'};
                 for i = 1:4
-                    self.handles(35+i) = plot(self.time_history, ...
+                    self.handles(36+i) = plot(self.time_history, ...
                         self.state_history(7+i,:) * (60/(2*pi)), ...
                         'Color', colors{i}, 'LineWidth', Param.line_width, ...
                         'DisplayName', sprintf('Wheel %d', i));
@@ -166,33 +170,36 @@ classdef Plotter < handle
 
                 subplot(2,3,1); hold on; grid on;
                 for i = 1:3
-                    self.handles(39+i) = plot(t, self.measurements_history(i,:), rgb{i}, 'LineWidth',Param.line_width);
+                    self.handles(40+i) = plot(t, self.measurements_history(i,:), rgb{i}, 'LineWidth',Param.line_width);
                 end
                 title('Accelerometers'); ylabel("$m/s^2$","Interpreter","latex"); xlabel("t (s)"); legend({'x','y','z'},'Location','best');
 
                 subplot(2,3,2); hold on; grid on;
                 for i = 1:3
-                    self.handles(42+i) = plot(t, self.measurements_history(3+i,:), rgb{i}, 'LineWidth',Param.line_width);
+                    self.handles(43+i) = plot(t, self.measurements_history(3+i,:), rgb{i}, 'LineWidth',Param.line_width);
                 end
                 title('Gyros'); ylabel("$rad/s$","Interpreter","latex"); xlabel("t (s)"); legend({'x','y','z'},'Location','best');
 
                 subplot(2,3,5); hold on; grid on;
                 for i = 1:3
-                    self.handles(45+i) = plot(t, self.measurements_history(6+i,:), rgb{i}, 'LineWidth',Param.line_width);
+                    self.handles(46+i) = plot(t, self.measurements_history(6+i,:), rgb{i}, 'LineWidth',Param.line_width);
                 end
                 title('Magnetometers'); ylabel("$T$","Interpreter","latex"); xlabel("t (s)"); legend({'x','y','z'},'Location','best');
 
                 subplot(2,3,6); hold on; grid on;
                 wtc = {'r','g','b','k'};
                 for i = 1:4
-                    self.handles(48+i) = plot(t, self.measurements_history(9+i,:), wtc{i}, 'LineWidth',Param.line_width);
+                    self.handles(49+i) = plot(t, self.measurements_history(9+i,:), wtc{i}, 'LineWidth',Param.line_width);
                 end
                 title('Wheel Tachometers'); ylabel("$RPM$","Interpreter","latex"); xlabel("t (s)"); legend({'Wheel 1', 'Wheel 2', 'Wheel 3', 'Wheel 4'},'Location','best')
             end
             
         end
 
-        function update(self, t, state, estimate, reference, model, input, measurements, mode)
+        function update(self, t, state, estimate, reference, model, input, measurements, mode, mtq_currents)
+            if nargin < 10
+                mtq_currents = zeros(4,1);
+            end
             state(5:7)        = rad2deg(state(5:7));
             estimate(5:7)     = rad2deg(estimate(5:7));
             reference(5:10)     = rad2deg(reference(5:10));
@@ -214,6 +221,7 @@ classdef Plotter < handle
             self.model_history(:,self.index) = model;
             self.measurements_history(:,self.index) = measurements;
             self.input_history(:, self.index) = input;
+            self.mtq_current_history(:, self.index) = mtq_currents;
             self.index = self.index + 1;
 
             if self.plot_orientation
@@ -258,30 +266,31 @@ classdef Plotter < handle
                 set(self.handles(30), 'XData', self.time_history, 'YData', self.input_history(2,:));
                 set(self.handles(31), 'XData', self.time_history, 'YData', self.input_history(3,:));
                 set(self.handles(32), 'XData', self.time_history, 'YData', self.input_history(4,:));
-                set(self.handles(33), 'XData', self.time_history, 'YData', self.input_history(5,:));
-                set(self.handles(34), 'XData', self.time_history, 'YData', self.input_history(6,:));
-                set(self.handles(35), 'XData', self.time_history, 'YData', self.input_history(7,:));
+                set(self.handles(33), 'XData', self.time_history, 'YData', self.mtq_current_history(1,:));
+                set(self.handles(34), 'XData', self.time_history, 'YData', self.mtq_current_history(2,:));
+                set(self.handles(35), 'XData', self.time_history, 'YData', self.mtq_current_history(3,:));
+                set(self.handles(36), 'XData', self.time_history, 'YData', self.mtq_current_history(4,:));
             end
 
             if self.plot_RPM
                 for i = 1:4
-                    set(self.handles(35+i), 'XData', self.time_history, ...
+                    set(self.handles(36+i), 'XData', self.time_history, ...
                         'YData', self.state_history(7+i,:) * (60/(2*pi)));
                 end
             end
 
             if self.plot_measurements
                 for i = 1:3
-                    set(self.handles(39+i), 'XData', self.time_history, 'YData', self.measurements_history(i,:));
+                    set(self.handles(40+i), 'XData', self.time_history, 'YData', self.measurements_history(i,:));
                 end
                 for i = 1:3
-                    set(self.handles(42+i), 'XData', self.time_history, 'YData', self.measurements_history(3+i,:));
+                    set(self.handles(43+i), 'XData', self.time_history, 'YData', self.measurements_history(3+i,:));
                 end
                 for i = 1:3
-                    set(self.handles(45+i), 'XData', self.time_history, 'YData', self.measurements_history(6+i,:));
+                    set(self.handles(46+i), 'XData', self.time_history, 'YData', self.measurements_history(6+i,:));
                 end
                 for i = 1:4
-                    set(self.handles(48+i), 'XData', self.time_history, 'YData', self.measurements_history(9+i,:));
+                    set(self.handles(49+i), 'XData', self.time_history, 'YData', self.measurements_history(9+i,:));
                 end
             end
             if isempty(self.legend_text_handle) || ~isvalid(self.legend_text_handle)

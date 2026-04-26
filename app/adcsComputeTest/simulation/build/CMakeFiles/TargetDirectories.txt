@@ -1,0 +1,5 @@
+C:/Users/arick/zephyr-workspace/ut-core/app/adcsComputeTest/simulation/build/CMakeFiles/ADCSCore.dir
+C:/Users/arick/zephyr-workspace/ut-core/app/adcsComputeTest/simulation/build/CMakeFiles/Plant.dir
+C:/Users/arick/zephyr-workspace/ut-core/app/adcsComputeTest/simulation/build/CMakeFiles/PlantSim.dir
+C:/Users/arick/zephyr-workspace/ut-core/app/adcsComputeTest/simulation/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/arick/zephyr-workspace/ut-core/app/adcsComputeTest/simulation/build/CMakeFiles/ZERO_CHECK.dir

@@ -1,0 +1,10 @@
+^C:\USERS\ARICK\ZEPHYR-WORKSPACE\UT-CORE\APP\ADCSCOMPUTETEST\SIMULATION\BUILD\CMAKEFILES\196379EDEEC214454DF6F86FA44A7AFD\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/arick/zephyr-workspace/ut-core/app/adcsComputeTest/simulation -BC:/Users/arick/zephyr-workspace/ut-core/app/adcsComputeTest/simulation/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/arick/zephyr-workspace/ut-core/app/adcsComputeTest/simulation/build/ADCSCore_Sim.slnx
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -114,7 +114,7 @@ if ~exist('innov_log', 'var') || isempty(innov_log)
     innov_log = [];
 end
 
-mode_map = containers.Map({0, 1, 2}, {'off', 'safe', 'bearing'});
+mode_map = containers.Map({0, 1, 2, 3}, {'off', 'detumble', 'motor', 'both'});
 
 % Initialize MTQ logs if they don't exist (for backward compatibility)
 if ~exist('mtq_current_log', 'var') || isempty(mtq_current_log)
@@ -355,10 +355,10 @@ if strcmp(data_format, 'airbearing')
         actionable_frac = h_perp_norm ./ max(h_norm, 1e-12);
         actionable_frac = min(max(actionable_frac, 0), 1);
 
-        bearing_mask = (mode_log == 2);
-        bearing_idx = find(bearing_mask);
+        both_mask = (mode_log == 3);
+        both_idx = find(both_mask);
         mtq_active_mask = m_cmd_norm >= 0.1 * m_max;
-        active_mask = bearing_mask & mtq_active_mask;
+        active_mask = both_mask & mtq_active_mask;
 
         figure('Name', 'MTQ Desaturation Effectiveness');
 
@@ -410,23 +410,23 @@ if strcmp(data_format, 'airbearing')
         legend('|h_{\perp B}|', 'd|h_{\perp B}|/dt', 'Location', 'best');
         grid on;
 
-        if ~isempty(bearing_idx)
+        if ~isempty(both_idx)
             t_row = time_log';
-            t_b_start = t_row(bearing_idx(1));
-            t_b_end = t_row(bearing_idx(end));
+            t_b_start = t_row(both_idx(1));
+            t_b_end = t_row(both_idx(end));
 
             start_win = 5.0;  % seconds after BEARING entry
             end_win = 10.0;   % final seconds in BEARING
 
-            start_mask = bearing_mask & (t_row >= t_b_start) & (t_row <= (t_b_start + start_win));
-            end_mask = bearing_mask & (t_row >= (t_b_end - end_win)) & (t_row <= t_b_end);
+            start_mask = both_mask & (t_row >= t_b_start) & (t_row <= (t_b_start + start_win));
+            end_mask = both_mask & (t_row >= (t_b_end - end_win)) & (t_row <= t_b_end);
 
             % Fallback for short bearing windows
             if nnz(start_mask) < 3
-                start_mask = bearing_mask;
+                start_mask = both_mask;
             end
             if nnz(end_mask) < 3
-                end_mask = bearing_mask;
+                end_mask = both_mask;
             end
 
             h0 = median(h_norm(start_mask));
@@ -450,23 +450,23 @@ if strcmp(data_format, 'airbearing')
                 mean_tau_util_active = NaN;
             end
 
-            fprintf('\n=== MTQ Desaturation Effectiveness (BEARING) ===\n');
-            fprintf('BEARING window: %.2f s to %.2f s (%.2f s)\n', t_b_start, t_b_end, t_b_end - t_b_start);
+            fprintf('\n=== MTQ Desaturation Effectiveness (BOTH) ===\n');
+            fprintf('BOTH window: %.2f s to %.2f s (%.2f s)\n', t_b_start, t_b_end, t_b_end - t_b_start);
             fprintf('|h| median start/end:      %.3e -> %.3e N*m*s  (reduction %.1f%%)\n', h0, hf, red_total);
             fprintf('|h_perp| start/end:        %.3e -> %.3e N*m*s  (reduction %.1f%%)\n', hperp0, hperpf, red_perp);
             fprintf('|h_parallel| start/end:    %.3e -> %.3e N*m*s  (reduction %.1f%%)\n', hpar0, hparf, red_par);
-            fprintf('Mean controllable fraction in BEARING: %.1f%%\n', 100 * mean(actionable_frac(bearing_mask)));
+            fprintf('Mean controllable fraction in BOTH: %.1f%%\n', 100 * mean(actionable_frac(both_mask)));
 
             if ~isnan(mean_slope_active)
-                fprintf('When MTQ active in BEARING:\n');
+                fprintf('When MTQ active in BOTH:\n');
                 fprintf('  mean d|h_perp|/dt = %.3e N*m*s^2\n', mean_slope_active);
                 fprintf('  time with decreasing |h_perp| = %.1f%%\n', frac_decreasing_active);
                 fprintf('  mean MTQ torque utilization = %.1f%% of max m_max|B|\n', mean_tau_util_active);
             else
-                fprintf('MTQ-active BEARING samples were not detected with current threshold.\n');
+                fprintf('MTQ-active BOTH samples were not detected with current threshold.\n');
             end
         else
-            fprintf('\nNo BEARING samples found in mode log. Skipping BEARING-only desat summary.\n');
+            fprintf('\nNo BOTH samples found in mode log. Skipping BOTH-only desat summary.\n');
         end
     else
         fprintf('\nMissing Param fields (S, I_wheel, or m_max). Skipping desaturation effectiveness analysis.\n');

@@ -229,11 +229,11 @@ classdef Animation < handle
                         for i = 1:length(self.ref_quiver_handles)
                             set(self.ref_quiver_handles(i), 'Visible', 'off');
                         end
-                    case 'safe'
+                    case 'detumble'
                         for i = 1:length(self.ref_quiver_handles)
                             set(self.ref_quiver_handles(i), 'Visible', 'on', 'Color', [1 0.5 0]);
                         end
-                    case {'bearing', 'point'}
+                    case {'motor', 'both'}
                         colX = self.palette_x; colY = self.palette_y; colZ = self.palette_z;
                         col = [colX; colY; colZ];
                         for i = 1:length(self.ref_quiver_handles)

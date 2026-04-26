@@ -313,7 +313,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\arick\zephyr-workspace\ut-core\app\adcsComputeTest\airBearingDemo\ADCSCore\components\core_ControllerManager.cpp" />
     <ClCompile Include="C:\Users\arick\zephyr-workspace\ut-core\app\adcsComputeTest\airBearingDemo\ADCSCore\components\core_ControllerNDI.cpp" />
     <ClCompile Include="C:\Users\arick\zephyr-workspace\ut-core\app\adcsComputeTest\airBearingDemo\ADCSCore\components\core_ControllerBDot.cpp" />
-    <ClCompile Include="C:\Users\arick\zephyr-workspace\ut-core\app\adcsComputeTest\airBearingDemo\ADCSCore\components\core_HelperFunctions.cpp" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

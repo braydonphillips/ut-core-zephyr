@@ -1,0 +1,2 @@
+rx_wall_time,timestamp_ms,priority,src,src_name,dst,dst_name,cls,cls_name,opcode,opcode_name,p2,p3,p4,p5,p6,p7,can_id_hex
+1777302793.468,510257,4,2,EPS,255,BROADCAST,0,HEARTBEAT,48,HEARTBEAT,0,0,0,0,0,0,0x1000BFC0

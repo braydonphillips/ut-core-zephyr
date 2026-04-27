@@ -1,0 +1,2 @@
+rx_wall_time,timestamp_ms,priority,src,src_name,dst,dst_name,cls,cls_name,opcode,opcode_name,p2,p3,p4,p5,p6,p7,can_id_hex
+1777302793.768,510599,6,4,ADCS,8,SOLAR,2,COMMAND,81,SET_MAG_DIPOLE,128,1,128,1,0,0,0x18010202

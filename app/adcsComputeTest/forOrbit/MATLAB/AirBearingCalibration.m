@@ -383,7 +383,7 @@ function runMagView(sp, history_len, apply_cal)
         t_ms   = str2double(toks{1});
         s_idx  = str2double(toks{2}) + 1;     % 1..3
         raw    = [str2double(toks{3}); str2double(toks{4}); str2double(toks{5})];
-        status = str2double(toks{8});
+        status = str2double(toks{7});
         if status ~= 0 || s_idx < 1 || s_idx > 3, continue; end
 
         if isnan(t0), t0 = t_ms; end
